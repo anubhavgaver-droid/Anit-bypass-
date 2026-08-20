@@ -1,18 +1,32 @@
 import os
+import base64
 import requests
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# क्लाउडफ्लेयर की टेस्ट कीज़ (बाद में अपनी कीज़ लगा सकते हैं)
+# क्लाउडफ्लेयर की टेस्ट कीज़ (ज़रूरत पड़ने पर अपनी कीज़ बदलें)
 TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY", "0x4AAAAAAEW2Ci6bkvsSt9JE")
 TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY", "0x4AAAAAAEW2CrKKwntMxBfDSRfXUr48arA")
 
 @app.route('/')
 def home():
+    # start.py से आने वाला encoded data या direct dest URL
+    encoded_data = request.args.get('data', '')
+    dest = request.args.get('dest', '')
+
+    # Base64 Data Decoding (Anti-Bypass Gateway Logic)
+    if encoded_data:
+        try:
+            dest = base64.b64decode(encoded_data).decode('utf-8')
+        except Exception:
+            dest = "https://t.me/SmartfilestorebyAcbot"
+
+    # Fallback default destination
+    if not dest:
+        dest = "https://t.me/SmartfilestorebyAcbot"
+
     token = request.args.get('v') or request.args.get('token') or ""
-    # जहाँ यूज़र को भेजना है (शॉर्टनर लिंक या टेलीग्राम बॉट)
-    dest = request.args.get('dest', 'https://get2short.com')
     
     return render_template('verify.html', site_key=TURNSTILE_SITE_KEY, token=token, dest=dest)
 
@@ -26,14 +40,18 @@ def verify_captcha():
         return jsonify({"success": False, "message": "Captcha required"}), 400
 
     # Cloudflare Server Validation
-    verify_res = requests.post(
-        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-        data={
-            "secret": TURNSTILE_SECRET_KEY,
-            "response": token,
-            "remoteip": request.remote_addr
-        }
-    ).json()
+    try:
+        verify_res = requests.post(
+            "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+            data={
+                "secret": TURNSTILE_SECRET_KEY,
+                "response": token,
+                "remoteip": request.remote_addr
+            },
+            timeout=10
+        ).json()
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Validation Error: {str(e)}"}), 500
 
     if verify_res.get("success"):
         return jsonify({"success": True, "redirect_url": dest_url})
