@@ -5,8 +5,8 @@ from flask import Flask, render_template, request, jsonify
 app = Flask(__name__)
 
 # क्लाउडफ्लेयर की टेस्ट कीज़ (बाद में अपनी कीज़ लगा सकते हैं)
-TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY", "1x00000000000000000000AA")
-TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY", "1x0000000000000000000000000000000AA")
+TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY", "0x4AAAAAAEW2Ci6bkvsSt9JE")
+TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY", "0x4AAAAAAEW2CrKKwntMxBfDSRfXUr48arA")
 
 @app.route('/')
 def home():
